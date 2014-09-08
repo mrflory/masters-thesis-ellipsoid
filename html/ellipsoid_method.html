@@ -1,0 +1,820 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>ellipsoid_method</title><meta name="generator" content="MATLAB 8.3"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2014-09-08"><meta name="DC.source" content="ellipsoid_method.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#3">Implementation of the ellipsoid method</a></li><li><a href="#4">Required methods for plotting</a></li><li><a href="#5">Syntax and parameters</a></li><li><a href="#6">Example usage</a></li><li><a href="#7">Open Issues and Todos</a></li><li><a href="#8">Initialization</a></li><li><a href="#9">Begin of ellipsoid iterations</a></li><li><a href="#10">Result of the ellipsoid method</a></li></ul></div><pre class="codeinput"><span class="keyword">function</span> [best_a,i] = ellipsoid_method(C, d, varargin)
+</pre><pre class="codeinput"><span class="comment">% ELLIPSOID_METHOD Find a feasible or optimal point in a set of linear</span>
+<span class="comment">% inequalities.</span>
+<span class="comment">%   [best_a,i] = ellipsoid_method(C, d) returns best feasible point best_a</span>
+<span class="comment">%   of the given linear program C,d and the final iteration i.</span>
+<span class="comment">%</span>
+<span class="comment">%   See also separation_oracle_omniscient</span>
+</pre><h2>Implementation of the ellipsoid method<a name="3"></a></h2><p>Basic algorithm according to <i>Gr&ouml;tschel, M., Lov&aacute;sz, L., &amp; Schrijver, A. (1988). Geometric algorithms and combinatorial optimization. Springer, Berlin.</i> with some extensions from <i>Korte, B., Vygen, J., Korte, B., &amp; Vygen, J. (2002). Combinatorial optimization (Vol. 1). Springer.</i> Using the sliding objective method to find an <img src="ellipsoid_method_eq97780.png" alt="$\epsilon$">-suboptimal solution.</p><div><ul><li>Author: Florian Stallmann <a href="mail@florian-stallmann.de">mail@florian-stallmann.de</a></li><li>Licence: CC0 1.0 Universal (Public Domain Dedication)</li><li>Version: 2014-09-08</li></ul></div><h2>Required methods for plotting<a name="4"></a></h2><div><ul><li>Ellipse_plot by Nima Moshtagh <a href="http://www.mathworks.com/matlabcentral/fileexchange/13844-plot-an-ellipse-in-center-form/content/Ellipse_plot.m">http://www.mathworks.com/matlabcentral/fileexchange/13844-plot-an-ellipse-in-center-form/content/Ellipse_plot.m</a></li><li>CON2VERT by Michael Kleder <a href="http://www.mathworks.com/matlabcentral/fileexchange/7894-con2vert-constraints-to-vertices/content/con2vert.m">http://www.mathworks.com/matlabcentral/fileexchange/7894-con2vert-constraints-to-vertices/content/con2vert.m</a></li></ul></div><h2>Syntax and parameters<a name="5"></a></h2><p>Linear program given as <img src="ellipsoid_method_eq71241.png" alt="$\max o \cdot x$"> st. <img src="ellipsoid_method_eq48576.png" alt="$C \cdot x \leq d$"> with:</p><div><ul><li>o as 1-by-n matrix of objective constants</li><li>C as m-by-n matrix of constraints</li><li>d as m-by-1 vector of constraint constants</li></ul></div><p>The following parameters are accepted when calling the method:   ellipsoid_method(C, d)   ellipsoid_method(C, d, o, CutType)   ellipsoid_method(, Name, Value)</p><pre>CutType = central, shallow, deep
+Name            | Value   | Description
+-----------------------------------------------
+optimize        | 0*, 1   | Optimize using sliding obj.
+eps             | 0.001   | Threshold for optimization.
+numiter         | int     | Max. no. of iterations. Default is calculated depending on cut.
+radius          | int     | Initial radius of ball containing polytope. Default is calculated automatically.
+ignore_blowup   | 0*, 1   | Ignore blow-up factor xi, don't compensate rounding errors.
+plot_fig        | 0*, 1   | Plot polytope and ellipsoid.
+plot_iter       | [0 1]   | Vector of iterations to plot, e.g. [0 1 5:8 15]. Default: only first two iterations.
+plot_title      | string  | Title of figure. Default: no title
+plot_separating | 0, 1*   | Plot separating hyperplane.
+plot_gradient   | 0, 1*   | Plot subgradient and direction vector.
+plot_pause      | 0*, 1   | Make a pause and wait for keypress after each iteration to be plotted.
+* = Default value</pre><h2>Example usage<a name="6"></a></h2><pre class="language-matlab"><span class="comment">%Input data:</span>
+C = [-1 -1;3 0;-2 2];
+d = [-2;4;3];
+o = [1 1];
+<span class="comment">%1 - Exact same picture as in book by Gr&ouml;tschel</span>
+[a,iter] = ellipsoid_method(C,d,<span class="string">'radius'</span>,7,<span class="string">'numiter'</span>,7,<span class="string">'plot_fig'</span>,1,<span class="string">'plot_iter'</span>,[0:7],<span class="string">'plot_title'</span>,<span class="string">'Ellipsoid Method: Example by Gr&ouml;tschel et al. 1981 p. 83'</span>,<span class="string">'plot_separating'</span>,0,<span class="string">'plot_gradient'</span>,0,<span class="string">'ignore_blowup'</span>,1);
+<span class="comment">%2 - Deep cut and optimization</span>
+[a,iter] = ellipsoid_method(C,d,o,<span class="string">'deep'</span>,<span class="string">'optimize'</span>,1,<span class="string">'radius'</span>,7,<span class="string">'plot_fig'</span>,1,<span class="string">'plot_iter'</span>,[0 1 2 3 4]);
+<span class="comment">%3 - Wait for keypress after each plotted iteration</span>
+[a,iter] = ellipsoid_method(C,d,o,<span class="string">'central'</span>,<span class="string">'optimize'</span>,1,<span class="string">'radius'</span>,7,<span class="string">'numiter'</span>,100,<span class="string">'plot_fig'</span>,1,<span class="string">'plot_iter'</span>,[12:16],<span class="string">'plot_pause'</span>,1);
+</pre><pre class="language-matlab"><span class="comment">%Output solution:</span>
+fprintf(<span class="string">'Final point in iteration %i:\n'</span>, iter)
+disp(a)
+fprintf(<span class="string">'Objective Value: %d\n'</span>, o*a)
+</pre><h2>Open Issues and Todos<a name="7"></a></h2><div><ul><li>Stopping criteria might not be correct for all types of cuts.</li><li>Calculation of N (# iterations) needs to be verified and adjusted   according to cut used, ie. shallow cut needs more iterations. Also, eps   needs to be considered according to Korte.</li><li>Calculation of R needs to be verified: different formular by Gr&ouml;tschel   and Korte.</li><li>Precision factor not used for now.</li><li>Blow-up factor xi for deep cut unknown (currently same as for central   cut is used).</li></ul></div><h2>Initialization<a name="8"></a></h2><p>Setting up the parameters and variables for the method.</p><pre class="codeinput"><span class="comment">% Parse input parameters</span>
+p = inputParser;
+
+defaultCut = <span class="string">'central'</span>;
+validCuts = {<span class="string">'central'</span>,<span class="string">'deep'</span>,<span class="string">'shallow'</span>};
+checkCut = @(x) any(validatestring(x,validCuts));
+
+addRequired(p,<span class="string">'C'</span>,@ismatrix);
+addRequired(p,<span class="string">'d'</span>,@isvector);
+addOptional(p,<span class="string">'objective'</span>,@isvector);
+addOptional(p,<span class="string">'cut'</span>,defaultCut,checkCut);
+
+addParameter(p,<span class="string">'optimize'</span>,0,@isnumeric);
+addParameter(p,<span class="string">'eps'</span>,1e-5,@isnumeric);
+addParameter(p,<span class="string">'numiter'</span>,0,@isnumeric);
+addParameter(p,<span class="string">'radius'</span>,0,@isnumeric);
+addParameter(p,<span class="string">'ignore_blowup'</span>,0,@isnumeric);
+addParameter(p,<span class="string">'center'</span>,[0;0],@isvector);
+
+addParameter(p,<span class="string">'plot_fig'</span>,0,@isnumeric);
+addParameter(p,<span class="string">'plot_iter'</span>,[0 1],@isvector);
+addParameter(p,<span class="string">'plot_title'</span>,<span class="string">''</span>,@ischar);
+addParameter(p,<span class="string">'plot_separating'</span>,1,@isnumeric);
+addParameter(p,<span class="string">'plot_gradient'</span>,1,@isnumeric);
+
+addParameter(p,<span class="string">'plot_pause'</span>,0,@isnumeric);
+
+parse(p,C,d,varargin{:});
+
+<span class="comment">% Assign input parameters</span>
+o = p.Results.objective;
+eps = p.Results.eps;
+OPTIMIZE = p.Results.optimize;
+ignore_blowup = p.Results.ignore_blowup;
+
+plot_fig = p.Results.plot_fig;
+plot_iter = p.Results.plot_iter;
+plot_title = p.Results.plot_title;
+plot_sep = p.Results.plot_separating;
+plot_grd = p.Results.plot_gradient;
+plot_pause = p.Results.plot_pause;
+
+FONTSIZE = 11;
+[~,n] = size(C);
+
+<span class="comment">% Use input parameters if set or calculate default ones</span>
+<span class="keyword">if</span> p.Results.numiter == 0
+    <span class="comment">%N = 2*n*((2*n+1)*input_size(C)+n*input_size(d)-n^3); %according to Gr&ouml;tschel 3.1.32</span>
+    N = 50 * (n+1)^2 * input_size(C,d); <span class="comment">%according to Gr&ouml;tschel 3.1.37</span>
+    <span class="comment">%N = ceil(10 * n^2 * (2 * log2(n) + 5 * input_size(C,d))); %according to Korte p. 99</span>
+    <span class="comment">%N = 5 * n^2 * ceil(log( (6*R^2*max( norm(o), 1 )) / (r*eps) )); %according to Korte p. 101</span>
+<span class="keyword">else</span>
+    N = p.Results.numiter;
+<span class="keyword">end</span>
+<span class="keyword">if</span> p.Results.radius == 0
+    R = max( n * 2^(2*(input_size(C,d)-n^2)) , 1); <span class="comment">%according to Gr&ouml;tschel 3.1.32 &amp; p. 80 avoid sqrt!</span>
+    <span class="comment">%R = max( n * (1 + 2^(4 * input_size(C,d))) , 1); %according to Korte p. 99</span>
+<span class="keyword">else</span>
+    R = p.Results.radius^2;
+<span class="keyword">end</span>
+<span class="comment">%precision = 8*N; % OPEN: precision parameter?</span>
+
+<span class="comment">% Initialization of ellipsoid matrix and center</span>
+A = R * eye(n); <span class="comment">% take R^2 above to avoid calc of sqrt in line 32 (see Gr&ouml;tschel p. 80)</span>
+<span class="keyword">if</span> size(p.Results.center,1) ~= n
+    a = zeros(n,1);
+<span class="keyword">else</span>
+    a = p.Results.center;
+<span class="keyword">end</span>
+
+<span class="comment">% Factors for each cut</span>
+<span class="keyword">if</span> strcmp(p.Results.cut, <span class="string">'central'</span>)
+    rho = 1/(n+1); <span class="comment">%step parameter (length in direction of -b to obtain a_k+1)</span>
+    sigma = n^2 / (n^2 - 1); <span class="comment">%dilatation parameter</span>
+    tau = 2 / (n+1); <span class="comment">%expansion parameter</span>
+    <span class="comment">%xi = 1; % (3.1.40) %blow-up parameter (to compensate rounding errors)</span>
+    xi = 1 + 1/(4*(n+1)^2); <span class="comment">%blow up factor (3.1.41)</span>
+    shift = 0; <span class="comment">%only used for plotting cutting plane</span>
+<span class="keyword">elseif</span> strcmp(p.Results.cut, <span class="string">'shallow'</span>)
+    <span class="comment">%beta = 1 / (n+1) %not used because already included in formulas below, but similar to alpha in deep cut.</span>
+    rho = 1/(n+1)^2;
+    sigma = (n^3 * (n+2)) / ((n+1)^3 * (n-1));
+    tau = 2 / (n*(n+1));
+    xi = 1 + 1/(2*n^2*(n+1)^2);
+    shift = tau;
+<span class="keyword">else</span>
+    <span class="comment">% deep cut factors need to be calculated each iteration</span>
+    xi = 1 + 1/(4*(n+1)^2); <span class="comment">% OPEEN: same as for central cut?</span>
+<span class="keyword">end</span>
+<span class="keyword">if</span> ignore_blowup
+    xi = 1; <span class="comment">%no rounding error compenstion</span>
+<span class="keyword">end</span>
+
+<span class="comment">% Plot polytope and initial ellipsoid</span>
+<span class="keyword">if</span> plot_fig
+    f = figure(<span class="string">'Name'</span>, <span class="string">'Ellipsoid Method Visualization'</span>);
+    set(f, <span class="string">'Units'</span>, <span class="string">'normalized'</span>, <span class="string">'Position'</span>, [0.1, 0.1, 0.8, 0.7]);
+    title(plot_title)
+    hold <span class="string">on</span>
+    <span class="comment">%color of axis and grid</span>
+    set(gca,<span class="string">'Xcolor'</span>,[0.6 0.6 0.6]);
+    set(gca,<span class="string">'Ycolor'</span>,[0.6 0.6 0.6]);
+    set(gca,<span class="string">'GridLineStyle'</span>,<span class="string">'-'</span>);
+    set(gca,<span class="string">'FontSize'</span>, FONTSIZE);
+
+    <span class="comment">% Fix the axis scaling and limits</span>
+    axis([-8 10 -8 10]); <span class="comment">%axis for example iterations 1-7</span>
+    <span class="comment">%axis([-1 4 0 5]); %axis for example iterations 8-15</span>
+    <span class="comment">%axis([1 1.5 2.5 3]); %axis for example iterations 30-+</span>
+    <span class="comment">%axis([1.3328 1.3336 2.8328 2.8336]); %axis for example gap</span>
+    daspect([1 1 1]);
+    <span class="comment">%axis equal</span>
+
+    V = con2vert(C, d); <span class="comment">% function from fileexchange to convert constraints into vertices to plot polytope</span>
+    x = V(:,1);
+    y = V(:,2);
+    k = convhull(V(:,1),V(:,2)); <span class="comment">% convex hall of vertices, need for plotting</span>
+    patch(x(k),y(k),[0.9 0.9 0.9]) <span class="comment">% plot polytope</span>
+    <span class="comment">%patch(x(k),y(k),'y') % plot polytope</span>
+    <span class="comment">%patch(V(:,1),V(:,2),'y') % plot polytope</span>
+    <span class="comment">%patch('Vertices',V,'FaceColor','y');</span>
+
+    <span class="comment">% Test if initialization should be plotted</span>
+    <span class="keyword">if</span> any(0 == plot_iter)
+        Ellipse_plot(inv(A),a) <span class="comment">% function from fileexchange to plot ellipse, due to different input format A matrix needs to be inverted</span>
+        text(a(1)+.1, a(2), <span class="string">'a_0'</span>, <span class="string">'FontSize'</span>, FONTSIZE)
+    <span class="keyword">end</span>
+    grid <span class="string">on</span>
+    <span class="comment">%pause program and wait for keypress</span>
+    <span class="keyword">if</span> plot_pause
+        <span class="comment">%Generate eps file for latex</span>
+        print <span class="string">-depsc2</span> <span class="string">ell_init.eps</span>
+        pause
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+<span class="comment">% Save best found feasible solution</span>
+best_a = a;
+best_obj = 0;
+
+<span class="comment">% Some debug and info variable</span>
+feasible_found = 0;
+num_till_feasible = 0; <span class="comment">%number of iterations until first feasible solution</span>
+num_inside = 0; <span class="comment">%number of times point inside ellipsoid is found after first feasible solution</span>
+num_outside = 0; <span class="comment">%number of times point outside ellipsoid is used after first feasible solution</span>
+</pre><img vspace="5" hspace="5" src="ellipsoid_method_01.png" alt=""> <h2>Begin of ellipsoid iterations<a name="9"></a></h2><p>Run the desired number of iterations of the ellipsoid method in a loop.</p><pre class="codeinput"><span class="keyword">for</span> i=1:N
+    <span class="comment">% Ask oracle (returns either point a or separating hyperplane)</span>
+    [c,gamma] = separation_oracle_omniscient(C, d, a);
+    <span class="comment">% Oracle just returned input variable "a" (all constraints are satisfied)</span>
+    <span class="keyword">if</span> all(a == c)
+        <span class="comment">% First feasible solution found</span>
+        <span class="keyword">if</span> feasible_found == 0
+            num_till_feasible = i-1; <span class="comment">%solution was already found in previous iteration</span>
+            feasible_found = 1; <span class="comment">%set to 1 at first found feasible solution</span>
+        <span class="keyword">end</span>
+		<span class="comment">% Optimization via sliding objective method</span>
+        <span class="keyword">if</span> OPTIMIZE
+            <span class="comment">% Add objective as constraint for sliding objective optimization</span>
+            c = -o'; <span class="comment">% o' for min // -o' for max</span>
+            <span class="comment">% Sliding objective method, only if certain threshold is met!</span>
+            <span class="keyword">if</span> sqrt(c' * A * c) &gt; eps
+                <span class="comment">% value of inequality (for deep cut)</span>
+                gamma = -o*a; <span class="comment">% o for min // -o for max</span>
+                num_inside = num_inside + 1; <span class="comment">%for info purpose: count iterations inside polytope</span>
+                <span class="comment">% Save best solution found so far</span>
+                <span class="keyword">if</span> o*a &gt; best_obj
+                    best_a = a;
+                    best_obj = o*a;
+                <span class="keyword">end</span>
+            <span class="keyword">else</span>
+                best_a = a;
+                <span class="comment">% Threshold reached, then stop here</span>
+                <span class="keyword">break</span>;
+            <span class="keyword">end</span>
+        <span class="keyword">else</span>
+            best_a = a;
+            <span class="comment">%best_obj = o*a;</span>
+            <span class="comment">% No optimization, then stop here</span>
+            <span class="keyword">break</span>;
+        <span class="keyword">end</span>
+    <span class="keyword">else</span>
+        <span class="comment">%for info purpose: count iterations outside polytope</span>
+        <span class="keyword">if</span> feasible_found == 1
+           num_outside = num_outside + 1;
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+
+    <span class="comment">% Calculate gradient g and factor b (a_k+1 will be shifted in direction -b)</span>
+    g = c / sqrt(c' * A * c);
+    b = A * g;
+    <span class="comment">%b = (norm(A*g) / norm(g)) * g; %test implementation to move directly into direction of gradient instead of A*g</span>
+
+    <span class="comment">% deep cut according to Gr&ouml;tschel 3.1.42</span>
+    <span class="keyword">if</span> strcmp(p.Results.cut, <span class="string">'deep'</span>)
+        alpha = (c'*a - gamma) / sqrt(c' * A * c); <span class="comment">%actually with alpha=0 we get central cut again</span>
+        rho = (1 + n*alpha) / (n+1);
+        sigma = (n^2 * (1-alpha^2)) / (n^2 - 1);
+        tau = (2*(1+n*alpha)) / ((n+1)*(1+alpha));
+        shift = -alpha;
+    <span class="keyword">end</span>
+
+    <span class="comment">% plot separating hyperplane (line is plotted for previous iteration)</span>
+    <span class="keyword">if</span> plot_fig &amp;&amp; plot_sep &amp;&amp; any(i == plot_iter) &amp;&amp; any(i-1 == plot_iter)
+        <span class="comment">% c'*x = c'*a (Korte et al. 2002 p. 84)</span>
+        max_R = ceil(sqrt(max(eig(A)))); <span class="comment">% sqrt of eigenvalue/-vector is the max possible radius</span>
+        <span class="comment">% test for vertical line (avoid division by 0)</span>
+        <span class="keyword">if</span> c(2) == 0 <span class="comment">%vertical line</span>
+            y = -max_R+a(2):max_R+a(2);
+            x = (a(1)+b(1)*shift) * ones(1,length(y)); <span class="comment">%matlab way to plot vertical line</span>
+        <span class="keyword">else</span> <span class="comment">%normal function/line</span>
+            x = -max_R+a(1):max_R+a(1);
+            y = (c'*(a+b*shift) - c(1)*x)/c(2); <span class="comment">%Korte p. 92 {z:az=ax} transformed to linear equation</span>
+        <span class="keyword">end</span>
+        <span class="comment">%plot(x, y, 'm--');</span>
+        plot(x, y, <span class="string">'LineStyle'</span>,<span class="string">'--'</span>,<span class="string">'Color'</span>,[0.4 0.4 0.4]);
+        grid <span class="string">on</span>
+        <span class="comment">%pause program and wait for keypress</span>
+        <span class="keyword">if</span> plot_pause
+            print(<span class="string">'-depsc2'</span>, sprintf(<span class="string">'ell_iter_%i_1_hyperplane.eps'</span>, i))
+            pause
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+
+<span class="comment">%     recalculate variables (L&ouml;wner-John-Ellipsoid, central cut)</span>
+<span class="comment">%     b = (A * c) / (sqrt(c' * A * c));</span>
+<span class="comment">%     a = a - b/(n+1);</span>
+<span class="comment">%     A = (n^2 / (n^2-1)) * (A -  (2/(n+1)) * (b * b'));</span>
+
+    <span class="comment">% Parameterized versions of formulas above</span>
+    a_prev = a; <span class="comment">%save previous a for drawing purposes</span>
+    a = a_prev - rho * b; <span class="comment">%new center of ellipsoid</span>
+    A = xi * sigma * ( (A - tau * (b * b')) );
+
+    <span class="comment">% output all variables for thesis</span>
+<span class="comment">%     i</span>
+<span class="comment">%     c</span>
+<span class="comment">%     b</span>
+<span class="comment">%     a</span>
+<span class="comment">%     A</span>
+<span class="comment">%     a/norm(a)</span>
+
+
+<span class="comment">%     % DEBUG: positive definite test</span>
+<span class="comment">%     [~,kp] = chol(A);</span>
+<span class="comment">%     if kp ~= 0</span>
+<span class="comment">%         A</span>
+<span class="comment">%     end</span>
+
+    <span class="comment">% plot ellipsoid</span>
+    <span class="keyword">if</span> plot_fig &amp;&amp; any(i == plot_iter)
+        <span class="comment">%plot gradient (plotted for previous iteration)</span>
+        <span class="keyword">if</span> plot_grd &amp;&amp; any(i-1 == plot_iter)
+            g_norm = g / norm(g); <span class="comment">%normalize length</span>
+<span class="comment">%             quiver(a_prev(1)+b(1)*shift, a_prev(2)+b(2)*shift, g_norm(1), g_norm(2), 0, 'LineStyle','-','Color','green') %plot vector from hyperplane in direction g (subgradient)</span>
+<span class="comment">%             quiver(a_prev(1), a_prev(2), -b(1), -b(2), 0, 'LineStyle','-','Color','cyan') %plot vector from previous center in direction -b</span>
+            quiver(a_prev(1)+b(1)*shift, a_prev(2)+b(2)*shift, g_norm(1), g_norm(2), 0, <span class="string">'LineStyle'</span>,<span class="string">'-'</span>,<span class="string">'Color'</span>,[0.6 0.6 0.6]) <span class="comment">%plot vector from hyperplane in direction g (subgradient)</span>
+            quiver(a_prev(1), a_prev(2), -b(1), -b(2), 0, <span class="string">'LineStyle'</span>,<span class="string">'-'</span>,<span class="string">'Color'</span>,[0.6 0.6 0.6]) <span class="comment">%plot vector from previous center in direction -b</span>
+        <span class="keyword">end</span>
+        grid <span class="string">on</span>
+        <span class="comment">%pause program and wait for keypress</span>
+        <span class="keyword">if</span> plot_pause
+            print(<span class="string">'-depsc2'</span>, sprintf(<span class="string">'ell_iter_%i_2_gradient.eps'</span>, i))
+            pause
+        <span class="keyword">end</span>
+        Ellipse_plot(inv(A),a) <span class="comment">% same as above, important: inv(A) only for plotting!</span>
+        text(a(1)+.1, a(2), sprintf(<span class="string">'a_{%i}'</span>, i), <span class="string">'FontSize'</span>, FONTSIZE) <span class="comment">% name center</span>
+        <span class="comment">%text(a(1)+.035, a(2), sprintf('a_{%i}', i), 'FontSize', FONTSIZE) % name center (closer for iterations 30+)</span>
+        grid <span class="string">on</span>
+        <span class="comment">%pause program and wait for keypress</span>
+        <span class="keyword">if</span> plot_pause
+            <span class="comment">%Generate eps file for latex</span>
+            print(<span class="string">'-depsc2'</span>, sprintf(<span class="string">'ell_iter_%i_3_ellipsoid.eps'</span>, i))
+            pause
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+</pre><img vspace="5" hspace="5" src="ellipsoid_method_02.png" alt=""> <h2>Result of the ellipsoid method<a name="10"></a></h2><p>Print some information about the output and plot the final result.</p><pre class="codeinput"><span class="comment">% Check if solution in last iteration is feasible (in case the very last iteration found a feasible solution)</span>
+<span class="keyword">if</span> feasible_found == 0
+    [c,~] = separation_oracle_omniscient(C, d, a);
+    <span class="keyword">if</span> all(a == c)
+        feasible_found = 1;
+        num_till_feasible = i;
+        best_a = a;
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+<span class="comment">% Output info</span>
+<span class="keyword">if</span> feasible_found == 1
+    fprintf(<span class="string">'First feasible solution found in iteration %i!\n'</span>, num_till_feasible);
+    <span class="keyword">if</span> OPTIMIZE
+        fprintf(<span class="string">'Optimal value after iteration %i with %i iterations outside polytope and %i iterations inside polytope.\n'</span>, i-1, num_outside, num_inside);
+    <span class="keyword">end</span>
+    <span class="keyword">if</span> plot_fig
+        <span class="comment">% highlight final vertex</span>
+        <span class="comment">%plot(a(1), a(2), 'r*', 'MarkerSize', 10)</span>
+        plot(best_a(1), best_a(2), <span class="string">'k*'</span>, <span class="string">'MarkerSize'</span>, 10)
+        grid <span class="string">on</span>
+        <span class="comment">%Generate eps file for latex</span>
+        print <span class="string">-depsc2</span> <span class="string">ell_final.eps</span>
+    <span class="keyword">end</span>
+<span class="keyword">else</span>
+    fprintf(<span class="string">'Warning: Solution not feasible after final iteration %i!\n'</span>, i);
+<span class="keyword">end</span>
+
+<span class="comment">% Statistics</span>
+<span class="comment">% num_inside</span>
+<span class="comment">% num_outside</span>
+</pre><pre class="codeoutput">First feasible solution found in iteration 7!
+Best feasible point after iteration 8:
+          1.32042710833094
+          2.36129578082208
+
+Objective Value: 6.043019e+00
+</pre><img vspace="5" hspace="5" src="ellipsoid_method_03.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+function [best_a,i] = ellipsoid_method(C, d, varargin)
+% ELLIPSOID_METHOD Find a feasible or optimal point in a set of linear
+% inequalities.
+%   [best_a,i] = ellipsoid_method(C, d) returns best feasible point best_a
+%   of the given linear program C,d and the final iteration i.
+%
+%   See also separation_oracle_omniscient
+
+%% Implementation of the ellipsoid method
+% Basic algorithm according to
+% _Grötschel, M., Lovász, L., & Schrijver, A. (1988). Geometric algorithms
+% and combinatorial optimization. Springer, Berlin._
+% with some extensions from
+% _Korte, B., Vygen, J., Korte, B., & Vygen, J. (2002). Combinatorial
+% optimization (Vol. 1). Springer._
+% Using the sliding objective method to find an $\epsilon$-suboptimal
+% solution.
+%
+% * Author: Florian Stallmann <mail@florian-stallmann.de>
+% * Licence: CC0 1.0 Universal (Public Domain Dedication)
+% * Version: 2014-09-08
+
+%% Required methods for plotting
+% * Ellipse_plot by Nima Moshtagh http://www.mathworks.com/matlabcentral/fileexchange/13844-plot-an-ellipse-in-center-form/content/Ellipse_plot.m
+% * CON2VERT by Michael Kleder http://www.mathworks.com/matlabcentral/fileexchange/7894-con2vert-constraints-to-vertices/content/con2vert.m
+
+%% Syntax and parameters
+% Linear program given as $\max o \cdot x$ st. $C \cdot x \leq d$ with:
+%
+% * o as 1-by-n matrix of objective constants
+% * C as m-by-n matrix of constraints
+% * d as m-by-1 vector of constraint constants
+%
+% The following parameters are accepted when calling the method:
+%   ellipsoid_method(C, d)
+%   ellipsoid_method(C, d, o, CutType)
+%   ellipsoid_method(__, Name, Value)
+%
+%  CutType = central, shallow, deep
+%  Name            | Value   | Description
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  optimize        | 0*, 1   | Optimize using sliding obj.
+%  eps             | 0.001   | Threshold for optimization.
+%  numiter         | int     | Max. no. of iterations. Default is calculated depending on cut.
+%  radius          | int     | Initial radius of ball containing polytope. Default is calculated automatically.
+%  ignore_blowup   | 0*, 1   | Ignore blow-up factor xi, don't compensate rounding errors.
+%  plot_fig        | 0*, 1   | Plot polytope and ellipsoid.
+%  plot_iter       | [0 1]   | Vector of iterations to plot, e.g. [0 1 5:8 15]. Default: only first two iterations.
+%  plot_title      | string  | Title of figure. Default: no title
+%  plot_separating | 0, 1*   | Plot separating hyperplane.
+%  plot_gradient   | 0, 1*   | Plot subgradient and direction vector.
+%  plot_pause      | 0*, 1   | Make a pause and wait for keypress after each iteration to be plotted.
+%  * = Default value
+
+%% Example usage
+%   %Input data:
+%   C = [-1 -1;3 0;-2 2];
+%   d = [-2;4;3];
+%   o = [1 1];
+%   %1 - Exact same picture as in book by Grötschel
+%   [a,iter] = ellipsoid_method(C,d,'radius',7,'numiter',7,'plot_fig',1,'plot_iter',[0:7],'plot_title','Ellipsoid Method: Example by Grötschel et al. 1981 p. 83','plot_separating',0,'plot_gradient',0,'ignore_blowup',1);
+%   %2 - Deep cut and optimization
+%   [a,iter] = ellipsoid_method(C,d,o,'deep','optimize',1,'radius',7,'plot_fig',1,'plot_iter',[0 1 2 3 4]);
+%   %3 - Wait for keypress after each plotted iteration
+%   [a,iter] = ellipsoid_method(C,d,o,'central','optimize',1,'radius',7,'numiter',100,'plot_fig',1,'plot_iter',[12:16],'plot_pause',1);
+%
+%   %Output solution:
+%   fprintf('Final point in iteration %i:\n', iter)
+%   disp(a)
+%   fprintf('Objective Value: %d\n', o*a)
+
+%% Open Issues and Todos
+% * Stopping criteria might not be correct for all types of cuts.
+% * Calculation of N (# iterations) needs to be verified and adjusted 
+%   according to cut used, ie. shallow cut needs more iterations. Also, eps
+%   needs to be considered according to Korte.
+% * Calculation of R needs to be verified: different formular by Grötschel
+%   and Korte.
+% * Precision factor not used for now.
+% * Blow-up factor xi for deep cut unknown (currently same as for central
+%   cut is used).
+
+%% Initialization
+% Setting up the parameters and variables for the method.
+
+% Parse input parameters
+p = inputParser;
+
+defaultCut = 'central';
+validCuts = {'central','deep','shallow'};
+checkCut = @(x) any(validatestring(x,validCuts));
+
+addRequired(p,'C',@ismatrix);
+addRequired(p,'d',@isvector);
+addOptional(p,'objective',@isvector);
+addOptional(p,'cut',defaultCut,checkCut);
+
+addParameter(p,'optimize',0,@isnumeric);
+addParameter(p,'eps',1e-5,@isnumeric);
+addParameter(p,'numiter',0,@isnumeric);
+addParameter(p,'radius',0,@isnumeric);
+addParameter(p,'ignore_blowup',0,@isnumeric);
+addParameter(p,'center',[0;0],@isvector);
+
+addParameter(p,'plot_fig',0,@isnumeric);
+addParameter(p,'plot_iter',[0 1],@isvector);
+addParameter(p,'plot_title','',@ischar);
+addParameter(p,'plot_separating',1,@isnumeric);
+addParameter(p,'plot_gradient',1,@isnumeric);
+
+addParameter(p,'plot_pause',0,@isnumeric);
+
+parse(p,C,d,varargin{:});
+
+% Assign input parameters
+o = p.Results.objective;
+eps = p.Results.eps;
+OPTIMIZE = p.Results.optimize;
+ignore_blowup = p.Results.ignore_blowup;
+
+plot_fig = p.Results.plot_fig;
+plot_iter = p.Results.plot_iter;
+plot_title = p.Results.plot_title;
+plot_sep = p.Results.plot_separating;
+plot_grd = p.Results.plot_gradient;
+plot_pause = p.Results.plot_pause;
+
+FONTSIZE = 11;
+[~,n] = size(C);
+
+% Use input parameters if set or calculate default ones
+if p.Results.numiter == 0
+    %N = 2*n*((2*n+1)*input_size(C)+n*input_size(d)-n^3); %according to Grötschel 3.1.32
+    N = 50 * (n+1)^2 * input_size(C,d); %according to Grötschel 3.1.37
+    %N = ceil(10 * n^2 * (2 * log2(n) + 5 * input_size(C,d))); %according to Korte p. 99
+    %N = 5 * n^2 * ceil(log( (6*R^2*max( norm(o), 1 )) / (r*eps) )); %according to Korte p. 101
+else
+    N = p.Results.numiter;
+end
+if p.Results.radius == 0
+    R = max( n * 2^(2*(input_size(C,d)-n^2)) , 1); %according to Grötschel 3.1.32 & p. 80 avoid sqrt!
+    %R = max( n * (1 + 2^(4 * input_size(C,d))) , 1); %according to Korte p. 99
+else
+    R = p.Results.radius^2;
+end
+%precision = 8*N; % OPEN: precision parameter?
+
+% Initialization of ellipsoid matrix and center
+A = R * eye(n); % take R^2 above to avoid calc of sqrt in line 32 (see Grötschel p. 80)
+if size(p.Results.center,1) ~= n
+    a = zeros(n,1);
+else
+    a = p.Results.center;
+end
+
+% Factors for each cut
+if strcmp(p.Results.cut, 'central')
+    rho = 1/(n+1); %step parameter (length in direction of -b to obtain a_k+1)
+    sigma = n^2 / (n^2 - 1); %dilatation parameter
+    tau = 2 / (n+1); %expansion parameter
+    %xi = 1; % (3.1.40) %blow-up parameter (to compensate rounding errors)
+    xi = 1 + 1/(4*(n+1)^2); %blow up factor (3.1.41)
+    shift = 0; %only used for plotting cutting plane
+elseif strcmp(p.Results.cut, 'shallow')
+    %beta = 1 / (n+1) %not used because already included in formulas below, but similar to alpha in deep cut.
+    rho = 1/(n+1)^2;
+    sigma = (n^3 * (n+2)) / ((n+1)^3 * (n-1));
+    tau = 2 / (n*(n+1));
+    xi = 1 + 1/(2*n^2*(n+1)^2);
+    shift = tau;
+else
+    % deep cut factors need to be calculated each iteration
+    xi = 1 + 1/(4*(n+1)^2); % OPEEN: same as for central cut?
+end
+if ignore_blowup
+    xi = 1; %no rounding error compenstion
+end
+
+% Plot polytope and initial ellipsoid
+if plot_fig
+    f = figure('Name', 'Ellipsoid Method Visualization');
+    set(f, 'Units', 'normalized', 'Position', [0.1, 0.1, 0.8, 0.7]);
+    title(plot_title)
+    hold on
+    %color of axis and grid
+    set(gca,'Xcolor',[0.6 0.6 0.6]);
+    set(gca,'Ycolor',[0.6 0.6 0.6]);
+    set(gca,'GridLineStyle','-');
+    set(gca,'FontSize', FONTSIZE);
+    
+    % Fix the axis scaling and limits
+    axis([-8 10 -8 10]); %axis for example iterations 1-7
+    %axis([-1 4 0 5]); %axis for example iterations 8-15
+    %axis([1 1.5 2.5 3]); %axis for example iterations 30-+
+    %axis([1.3328 1.3336 2.8328 2.8336]); %axis for example gap
+    daspect([1 1 1]);
+    %axis equal
+    
+    V = con2vert(C, d); % function from fileexchange to convert constraints into vertices to plot polytope
+    x = V(:,1);
+    y = V(:,2);
+    k = convhull(V(:,1),V(:,2)); % convex hall of vertices, need for plotting
+    patch(x(k),y(k),[0.9 0.9 0.9]) % plot polytope
+    %patch(x(k),y(k),'y') % plot polytope
+    %patch(V(:,1),V(:,2),'y') % plot polytope
+    %patch('Vertices',V,'FaceColor','y');
+
+    % Test if initialization should be plotted
+    if any(0 == plot_iter)
+        Ellipse_plot(inv(A),a) % function from fileexchange to plot ellipse, due to different input format A matrix needs to be inverted
+        text(a(1)+.1, a(2), 'a_0', 'FontSize', FONTSIZE)
+    end
+    grid on
+    %pause program and wait for keypress
+    if plot_pause
+        %Generate eps file for latex
+        print -depsc2 ell_init.eps
+        pause
+    end
+end
+
+% Save best found feasible solution
+best_a = a;
+best_obj = 0;
+
+% Some debug and info variable
+feasible_found = 0;
+num_till_feasible = 0; %number of iterations until first feasible solution
+num_inside = 0; %number of times point inside ellipsoid is found after first feasible solution
+num_outside = 0; %number of times point outside ellipsoid is used after first feasible solution
+
+%% Begin of ellipsoid iterations
+% Run the desired number of iterations of the ellipsoid method in a loop.
+
+for i=1:N
+    % Ask oracle (returns either point a or separating hyperplane)
+    [c,gamma] = separation_oracle_omniscient(C, d, a);
+    % Oracle just returned input variable "a" (all constraints are satisfied)
+    if all(a == c)
+        % First feasible solution found
+        if feasible_found == 0
+            num_till_feasible = i-1; %solution was already found in previous iteration
+            feasible_found = 1; %set to 1 at first found feasible solution
+        end
+		% Optimization via sliding objective method
+        if OPTIMIZE
+            % Add objective as constraint for sliding objective optimization
+            c = -o'; % o' for min // -o' for max
+            % Sliding objective method, only if certain threshold is met!
+            if sqrt(c' * A * c) > eps
+                % value of inequality (for deep cut)
+                gamma = -o*a; % o for min // -o for max
+                num_inside = num_inside + 1; %for info purpose: count iterations inside polytope
+                % Save best solution found so far
+                if o*a > best_obj
+                    best_a = a;
+                    best_obj = o*a;
+                end
+            else
+                best_a = a;
+                % Threshold reached, then stop here
+                break;
+            end
+        else
+            best_a = a;
+            %best_obj = o*a;
+            % No optimization, then stop here
+            break;
+        end
+    else
+        %for info purpose: count iterations outside polytope
+        if feasible_found == 1
+           num_outside = num_outside + 1; 
+        end
+    end
+    
+    % Calculate gradient g and factor b (a_k+1 will be shifted in direction -b)
+    g = c / sqrt(c' * A * c);
+    b = A * g;
+    %b = (norm(A*g) / norm(g)) * g; %test implementation to move directly into direction of gradient instead of A*g
+    
+    % deep cut according to Grötschel 3.1.42
+    if strcmp(p.Results.cut, 'deep')
+        alpha = (c'*a - gamma) / sqrt(c' * A * c); %actually with alpha=0 we get central cut again
+        rho = (1 + n*alpha) / (n+1);
+        sigma = (n^2 * (1-alpha^2)) / (n^2 - 1);
+        tau = (2*(1+n*alpha)) / ((n+1)*(1+alpha));
+        shift = -alpha;
+    end
+    
+    % plot separating hyperplane (line is plotted for previous iteration)
+    if plot_fig && plot_sep && any(i == plot_iter) && any(i-1 == plot_iter)
+        % c'*x = c'*a (Korte et al. 2002 p. 84)
+        max_R = ceil(sqrt(max(eig(A)))); % sqrt of eigenvalue/-vector is the max possible radius
+        % test for vertical line (avoid division by 0)
+        if c(2) == 0 %vertical line
+            y = -max_R+a(2):max_R+a(2);
+            x = (a(1)+b(1)*shift) * ones(1,length(y)); %matlab way to plot vertical line
+        else %normal function/line
+            x = -max_R+a(1):max_R+a(1);
+            y = (c'*(a+b*shift) - c(1)*x)/c(2); %Korte p. 92 {z:az=ax} transformed to linear equation
+        end
+        %plot(x, y, 'mREPLACE_WITH_DASH_DASH');
+        plot(x, y, 'LineStyle','REPLACE_WITH_DASH_DASH','Color',[0.4 0.4 0.4]);
+        grid on
+        %pause program and wait for keypress
+        if plot_pause
+            print('-depsc2', sprintf('ell_iter_%i_1_hyperplane.eps', i))
+            pause
+        end
+    end
+
+%     recalculate variables (Löwner-John-Ellipsoid, central cut)
+%     b = (A * c) / (sqrt(c' * A * c));
+%     a = a - b/(n+1);
+%     A = (n^2 / (n^2-1)) * (A -  (2/(n+1)) * (b * b'));
+
+    % Parameterized versions of formulas above
+    a_prev = a; %save previous a for drawing purposes
+    a = a_prev - rho * b; %new center of ellipsoid
+    A = xi * sigma * ( (A - tau * (b * b')) );
+    
+    % output all variables for thesis
+%     i
+%     c
+%     b
+%     a
+%     A
+%     a/norm(a)
+    
+
+%     % DEBUG: positive definite test
+%     [~,kp] = chol(A);
+%     if kp ~= 0
+%         A
+%     end
+    
+    % plot ellipsoid
+    if plot_fig && any(i == plot_iter)
+        %plot gradient (plotted for previous iteration)
+        if plot_grd && any(i-1 == plot_iter)
+            g_norm = g / norm(g); %normalize length
+%             quiver(a_prev(1)+b(1)*shift, a_prev(2)+b(2)*shift, g_norm(1), g_norm(2), 0, 'LineStyle','-','Color','green') %plot vector from hyperplane in direction g (subgradient)
+%             quiver(a_prev(1), a_prev(2), -b(1), -b(2), 0, 'LineStyle','-','Color','cyan') %plot vector from previous center in direction -b
+            quiver(a_prev(1)+b(1)*shift, a_prev(2)+b(2)*shift, g_norm(1), g_norm(2), 0, 'LineStyle','-','Color',[0.6 0.6 0.6]) %plot vector from hyperplane in direction g (subgradient)
+            quiver(a_prev(1), a_prev(2), -b(1), -b(2), 0, 'LineStyle','-','Color',[0.6 0.6 0.6]) %plot vector from previous center in direction -b
+        end
+        grid on
+        %pause program and wait for keypress
+        if plot_pause
+            print('-depsc2', sprintf('ell_iter_%i_2_gradient.eps', i))
+            pause
+        end
+        Ellipse_plot(inv(A),a) % same as above, important: inv(A) only for plotting!
+        text(a(1)+.1, a(2), sprintf('a_{%i}', i), 'FontSize', FONTSIZE) % name center
+        %text(a(1)+.035, a(2), sprintf('a_{%i}', i), 'FontSize', FONTSIZE) % name center (closer for iterations 30+)
+        grid on
+        %pause program and wait for keypress
+        if plot_pause
+            %Generate eps file for latex
+            print('-depsc2', sprintf('ell_iter_%i_3_ellipsoid.eps', i))
+            pause
+        end
+    end
+end
+
+%% Result of the ellipsoid method
+% Print some information about the output and plot the final result.
+
+% Check if solution in last iteration is feasible (in case the very last iteration found a feasible solution)
+if feasible_found == 0
+    [c,~] = separation_oracle_omniscient(C, d, a);
+    if all(a == c)
+        feasible_found = 1;
+        num_till_feasible = i;
+        best_a = a;
+    end
+end
+
+% Output info
+if feasible_found == 1
+    fprintf('First feasible solution found in iteration %i!\n', num_till_feasible);
+    if OPTIMIZE
+        fprintf('Optimal value after iteration %i with %i iterations outside polytope and %i iterations inside polytope.\n', i-1, num_outside, num_inside);
+    end
+    if plot_fig
+        % highlight final vertex
+        %plot(a(1), a(2), 'r*', 'MarkerSize', 10)
+        plot(best_a(1), best_a(2), 'k*', 'MarkerSize', 10)
+        grid on
+        %Generate eps file for latex
+        print -depsc2 ell_final.eps
+    end
+else
+    fprintf('Warning: Solution not feasible after final iteration %i!\n', i);
+end
+
+% Statistics
+% num_inside
+% num_outside
+##### SOURCE END #####
+--></body></html>
