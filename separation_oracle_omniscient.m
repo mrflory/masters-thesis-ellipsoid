@@ -1,5 +1,5 @@
 function [c,gamma] = separation_oracle_omniscient(C, d, a)
-% SEPARATION_ORACLE_OMNISCIENT Helper function for ellipsoid method.
+% SEPARATION_ORACLE_OMNISCIENT Helper function for the ellipsoid method.
 %   [c,gamma] = SEPARATION_ORACLE_OMNISCIENT(C,d,a) will check any
 %   inequality in C,d is violated by a and return the separation hyperplane
 %   c, otherwise it will return a as cutting plane.

@@ -5,7 +5,9 @@ was developed for my master's thesis at Technische Universität München in 2014
 The repository consists of three files: The ellipsoid_method function, a helper function named
 separation_oracle_omniscient, and a file with several examples. Please refer to the
 inline comments regarding the parameters of the method. In addition, the MATLAB publishing files
-are appended in the html folder.
+for the example are appended in the html folder.
+
+![Screenshot of the ellipsoid method](https://raw.githubusercontent.com/mrflory/masters-thesis-ellipsoid/master/screenshot.png)
 
 ## Requirements ##
 

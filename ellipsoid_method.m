@@ -1,7 +1,7 @@
 function [best_a,i] = ellipsoid_method(C, d, varargin)
 % ELLIPSOID_METHOD Find a feasible or optimal point in a set of linear
 % inequalities.
-%   [best_a,i] = ellipsoid_method(C, d) returns best feasible point best_a
+%   [best_a,i] = ELLIPSOID_METHOD(C, d) returns best feasible point best_a
 %   of the given linear program C,d and the final iteration i.
 %
 %   See also separation_oracle_omniscient
